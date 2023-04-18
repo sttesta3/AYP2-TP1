@@ -9,10 +9,12 @@ using namespace std;
 
 int main(int argc, char* argv[]){
     /*
-        Leer archivos y cargar equipos-partidos a memoria
+        Leer archivo de equipos, cargar equipos en memoria (vector dinamico).
+        Leer archivo de partidos, cargar puntos y fase final en equipos.
+        Formar grupos y fases finales
         Ofrecer menu, while usuario quiera seguir utilizando app
         Alternar entre opciones del menu
-        Exit (y descarga de datos de memoria)
+        Exit (y descarga memoria dinamica)
     */
 
     if (argc != 1){
@@ -37,10 +39,12 @@ int main(int argc, char* argv[]){
 
     string linea;
     while (getline(entrada_equipos, linea)){    // Se utiliza string debido a error de compilación
+        linea = to_lower(linea);
         if(validar_equipo(linea)){
-            //Equipo* equipo;
-            //iniciar_equipo_vacio(equipo);
-            cargar_equipo_en_memoria(to_lower(linea), mundial);
+            if (cargar_equipo_en_memoria(linea, mundial) == 1){
+                entrada_equipos.close();
+                descargar_mundial(mundial);
+            }
         }
         else{
             cout << "Formato de equipo invalido" << endl;
@@ -50,11 +54,21 @@ int main(int argc, char* argv[]){
         }
     }
     entrada_equipos.close();
-    ordenar_equipos(mundial);     // Ordenar alfabeticamente
-    //formar_grupos(mundial);
+    ordenar_equipos(mundial);                                               // Ordenar alfabeticamente
+    mundial->MAXIMO_ITERACIONES = 2*log(mundial->cant_equipos)/(log(2));    // MAXIMO ITERACIONES(el doble del minimo calculado)
 
-    mundial->MAXIMO_ITERACIONES = 2*log(mundial->cant_equipos)/(log(2));
+    /*
+    cout << "CANT FASES: " << mundial->cant_fases << endl;
+    for (int i = 0; i < mundial->cant_fases; i++)
+        cout << "FASE: " << mundial->fases[i].fase << endl;
+    */
+
+
+    /* // DEBUG
     menu_listar_equipos(mundial);
+    menu_puntos(mundial);
+    */
+
     // Cargar partidos en memoria (asignar puntos y guardar puestos)
     ifstream entrada_partidos("resultados2.csv");
     if (!entrada_partidos){
@@ -86,39 +100,44 @@ int main(int argc, char* argv[]){
         }
     }
     entrada_partidos.close();
-    ordenar_equipos_pp(mundial);
 
+    menu_listar_equipos(mundial);
+    formar_grupos(mundial);
+    ordenar_fases(mundial);
 
-    cout << "EQUIPOS DE OCTAVOS" << endl;
-    for (int m = 0; m < mundial->agregados_a_octavos; m++)
-        if (mundial->octavos_pp[m].nombre != "")
-            cout << "EQUIPO: " << mundial->octavos_pp[m].nombre << " PUNTOS: " << mundial->octavos_pp[m].puntos[1] << endl;
-
-    cout << "EQUIPOS DE CUARTOS" << endl;
-    for (int m = 0; m < mundial->agregados_a_cuartos; m++)
-        if (mundial->cuartos_pp[m].nombre != "")
-            cout << "EQUIPO: " << mundial->cuartos_pp[m].nombre << " PUNTOS: " << mundial->cuartos_pp[m].puntos[1] << endl;
-
-    cout << "EQUIPOS DE SEMIS" << endl;
-    for (int m = 0; m < mundial->agregados_a_semifinal; m++)
-        if (mundial->semifinal_pp[m].nombre != "")
-            cout << "EQUIPO: " << mundial->semifinal_pp[m].nombre << " PUNTOS: " << mundial->semifinal_pp[m].puntos[3] << endl;
-
-
-    // Ordenar por puntos
-    /*
-    ordenar_equipos_pp(mundial->equipos_pp,"grupos");
-    ordenar_equipos_pp(mundial->octavos_pp,"octavos");
-    ordenar_equipos_pp(mundial->cuartos_pp,"cuartos");
-    ordenar_equipos_pp(mundial->semifinal_pp,"semifinales");
-    */
-    int i = 0;
-    while(mundial->equipos_pp[i].grupo != '\0'){
-        cout << "Puntos Grupos: " << mundial->equipos_pp[i].puntos[0] << " Equipo: " << to_upper(mundial->equipos_pp[i].nombre) << endl;
-        i++;
+     /* // DEBUG /*
+    for (int i=0;i < mundial->cant_equipos; i++){
+        cout << "EQUIPO: " << mundial->equipos[i].nombre << " Puntos Gr: " << mundial->equipos[i].puntos[5] << " FASe FINAL: " << mundial->equipos[i].fase_final << endl;
+        cout << "EQUIPO: " << mundial->equipos[i].nombre << " Puntos Oc: " << mundial->equipos[i].puntos[4] << " FASe FINAL: " << mundial->equipos[i].fase_final << endl;
+        cout << "EQUIPO: " << mundial->equipos[i].nombre << " Puntos 4t: " << mundial->equipos[i].puntos[3] << " FASe FINAL: " << mundial->equipos[i].fase_final << endl;
+        cout << "EQUIPO: " << mundial->equipos[i].nombre << " Puntos Sf: " << mundial->equipos[i].puntos[2] << " FASe FINAL: " << mundial->equipos[i].fase_final << endl;
+        cout << "EQUIPO: " << mundial->equipos[i].nombre << " Puntos Tp: " << mundial->equipos[i].puntos[1] << " FASe FINAL: " << mundial->equipos[i].fase_final << endl;
+        cout << "EQUIPO: " << mundial->equipos[i].nombre << " Puntos FF: " << mundial->equipos[i].puntos[0] << " FASe FINAL: " << mundial->equipos[i].fase_final << endl;
     }
 
-    // COMENTARIO PARA TEST SIN CARGAR PARTIDOS
+    cout << "GANADOR " << mundial->fases[0].equipos[0].nombre << endl;
+    cout << "PG: " << mundial->fases[0].equipos[0].puntos[5] << endl;
+    cout << "Tercer " << mundial->fases[1].equipos[0].nombre << endl;
+    cout << "PG: " << mundial->fases[1].equipos[0].puntos[5] << endl;
+    cout << "Siete " << mundial->fases[4].equipos[1].nombre << endl;
+    cout << "PG: " << mundial->fases[4].equipos[1].puntos[2] << endl;
+    */
+
+    // mundial->fases[posicion].equipos[mundial->fases[posicion].cant_equipos].puntos[5];
+    for (int i=0; i < 4; i++){
+        cout << "GRUPO: " << mundial->fases[i].fase << endl;
+        for (int ii = 0; ii < mundial->fases[i].cant_equipos; ii++){
+            cout << "EQUIPO: " << mundial->fases[i].equipos[ii].nombre << endl;
+            cout << "PUNTOS G: " << mundial->fases[i].equipos[ii].puntos[5] << endl;
+            cout << "OCTAVOS : " << mundial->fases[i].equipos[ii].puntos[4] << endl;
+            cout << "CUARTOS : " << mundial->fases[i].equipos[ii].puntos[3] << endl;
+            cout << "SEMIFINA: " << mundial->fases[i].equipos[ii].puntos[2] << endl;
+            cout << "FINAL   : " << mundial->fases[i].equipos[ii].puntos[0] << endl;
+
+            Equipo* encontrado = buscar_equipo(mundial, mundial->fases[i].equipos[ii].nombre);
+            cout << "ENCONTRE A: " << encontrado->nombre << " PUNTOS: " << encontrado->puntos[5] <<endl;
+        }
+    }
 
     // Menu
     cout << "Bienvenido" << endl;

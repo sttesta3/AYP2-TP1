@@ -12,32 +12,37 @@ struct Equipo {
     string nombre;
     char grupo;
 
-    int puntos[6];        // Vector dinamico de puntos[fase]
+    int puntos[6];          // Vector dinamico de puntos[fase]
     int fase_final;
 };
 
-
+struct Fase {               // Struct para fases y grupos
+    Equipo* equipos;
+    string fase;
+    int cant_equipos;
+};
 
 struct Mundial {
-    int cant_equipos;
     int MAXIMO_ITERACIONES;
     //Vectores dinamicos de equipos (ordenados alfabeticamente)
+    int cant_equipos;
     Equipo* equipos;
 
-    // Vectores dinamicos de equipos (ordenados por puntaje)
-    Equipo* equipos_pp;
-    Equipo* octavos_pp;
-    int agregados_a_octavos;
-    Equipo* cuartos_pp;
-    int agregados_a_cuartos;
-    Equipo* semifinal_pp;
-    int agregados_a_semifinal;
+    // Vectores dinamicos de fases (ordenados por puntaje)
+    Fase* fases;
+    int cant_fases; // si hay 6 grupos, este int será 9 (6 grupos + 3 fases)
+    /*
+    fase[i] i:0 -> final
+            i:1 -> tercer puesto
+            i:2 -> semifinal
+            i:3 -> cuartos
+            i:4 -> octavos
+            i:5 -> grupos
 
-    // Ganadores
-    Equipo* cuarto;
-    Equipo* tercero;
-    Equipo* segundo;
-    Equipo* primero;
+            EJ. arg C, croacia A -> i:3 grupo C, i:4 grupo A
+
+            No se agrega final y tercer puesto, debido a que se tienen los punteros a primero, segundo, tercero y cuarto
+    */
 
 };
 
@@ -53,15 +58,24 @@ struct Partido {        // Estructura no guardada en mem. dinamica, solo para fa
 
 // FUNCIONES DE MEMORIA
 int iniciar_equipo_vacio(Equipo* equipo);
+int iniciar_fase_vacia(Fase* fase);
+
 int estirar_vector(Mundial* mundial);
+int estirar_vector_fases(Mundial* mundial);
+int estirar_vector_grupo(Mundial* mundial, int num_fase);
+
 void iniciar_equipo(char grupo, string nombre, Equipo* equipo);
+
 int cargar_equipo_en_memoria(string linea, Mundial* mundial);
+int formar_grupos(Mundial* mundial);
+
+Mundial* iniciar_mundial(void);
+int descargar_mundial(Mundial* mundial);
+
 int recursion_swap(Mundial* mundial, int i);
 int comparar_alfabeticamente(string a, string b);
 void ordenar_equipos(Mundial* mundial);
-void ordenar_equipos_pp(Mundial* mundial);
-
-Mundial* iniciar_mundial(void);
+void ordenar_fases(Mundial* mundial);
 
 //void formar_grupos(Mundial* mundial);
 int cargar_partidos(string linea, Mundial* mundial, string fase);
@@ -69,8 +83,8 @@ int fase_a_numero(string fase);
 
 Equipo* buscar_equipo(Mundial* mundial, string nombre);
 int busqueda_binaria(Mundial* mundial, string nombre, int n, int cant_iteraciones);
+int iterar_fases(Mundial* mundial, char grupo);
 
-int descargar_mundial(Mundial* mundial);
 
 bool divisor_de_fase(string input);
 bool validar_equipo(string linea);
