@@ -83,7 +83,7 @@ int estirar_vector_fases(Mundial* mundial){
     delete [] mundial->fases;
     mundial->fases = nueva;
 
-    for (int i = 0; i < n+10; i++){
+    for (int i = n; i < n+10; i++){     // AGREGADO POR DEBUG BRUTO
         mundial->fases[i].cant_equipos = 0;
         mundial->fases[i].fase = '\0';
         mundial->fases[i].equipos = nullptr;
@@ -247,7 +247,7 @@ int cargar_partidos(string linea, Mundial* mundial, string fase){
 int formar_grupos(Mundial* mundial){
 // Carga de fases
 
-    cout << "PARA EMPEZAR, 10 fases" << endl;
+    // cout << "PARA EMPEZAR, 10 fases" << endl;
     if (estirar_vector_fases(mundial) == 1)
         return 1;
 
@@ -270,8 +270,10 @@ int formar_grupos(Mundial* mundial){
     // ITERAR EQUIPOS, FORMANDO FASES
     int posicion;
     for (int i = 0; i < mundial->cant_equipos; i++){
+
+        // AÑADIR EQUIPO A GRUPO
         posicion = iterar_fases(mundial,mundial->equipos[i].grupo);
-        cout << "POSICION: " << posicion << endl;
+        // cout << "POSICION: " << posicion << endl;
         // Si la fase esta vacia, guardar nuevo grupo
         if (mundial->fases[posicion].cant_equipos == 0){
             mundial->fases[posicion].fase = mundial->equipos[i].grupo;
@@ -279,7 +281,7 @@ int formar_grupos(Mundial* mundial){
 
             // ESTIRAR SI LLEGAMOS A MULTIPLO DE 10
             if (mundial->cant_fases%10 == 0){
-                cout << "TE DOY 10 FASES MAS" << endl;
+                // cout << "TE DOY 10 FASES MAS" << endl;
                 if (estirar_vector_fases(mundial) == 1)
                     return 1;
             }
@@ -289,25 +291,27 @@ int formar_grupos(Mundial* mundial){
                 return 1;
         }
 
-        // AGREGAR EQUIPO A GRUPO
+        // Agregar equipo a grupo
         int n = mundial->fases[posicion].cant_equipos;
-        cout << "CANT EQUIPOS EN FASE: " << n << endl;
         mundial->fases[posicion].equipos[n] = mundial->equipos[i];
-        cout << "EQUIPO EN POSICIÓN FINAL: " << mundial->fases[posicion].equipos[n].nombre << endl;
         mundial->fases[posicion].cant_equipos += 1;
-        cout << "LISTO" << endl;
 
+
+        // cout << "EQUIPO AGREGADO A GRUPO" << endl;
         // AGREGAR EQUIPO A FASES FINALES (si llega a fase n, se lo agrega a todas las fases anteriores)
-        if (mundial->equipos[i].fase_final < 5){
-            for (int j = 4; j >= mundial->equipos[i].fase_final; j--){
-                cout << "FASE j:" << j << " EQUIPO: " << mundial->equipos[i].nombre << endl;
-                cout << &mundial->fases[j].equipos[mundial->fases[j].cant_equipos] << endl;
+        int m = mundial->equipos[i].fase_final;
+        if (m < 5){
+            // ESTA AGREGANDO A TERCER PUESTO
+            for (int j = 4; j >= m && j >= 2; j--){
                 mundial->fases[j].equipos[mundial->fases[j].cant_equipos] = mundial->equipos[i];
                 mundial->fases[j].cant_equipos += 1;
             }
-        }
 
-        cout << "SALGO FOR" << endl;
+            if (m == 0 || m == 1){
+                mundial->fases[m].equipos[mundial->fases[m].cant_equipos] = mundial->equipos[i];
+                mundial->fases[m].cant_equipos += 1;
+            }
+        }
     }
 
     return 0;
@@ -319,7 +323,7 @@ int iterar_fases(Mundial* mundial, char grupo){
     while (grupo_encontrado == false && i < mundial->cant_fases){
         if (mundial->fases[i].fase[0] == grupo){
             grupo_encontrado = true;
-            cout << "GRUPO EXISTENTE: " << grupo << endl;
+            // cout << "GRUPO EXISTENTE: " << grupo << endl;
         }
         else
             i++;
@@ -330,12 +334,6 @@ int iterar_fases(Mundial* mundial, char grupo){
 
 int recursion_swap(Mundial* mundial, int i){
     if (i != 0){
-        /*  DEBUGGING
-        cout << "i: " << i << endl;
-        cout << "eq[i]: " << mundial->equipos[i].nombre << endl;
-        cout << "eq[i-1]: " << mundial->equipos[i - 1].nombre << endl;
-        cout << "res: " << comparar_alfabeticamente( mundial->equipos[i].nombre, mundial->equipos[i -1].nombre) << endl;
-        */
         if (comparar_alfabeticamente( mundial->equipos[i].nombre, mundial->equipos[i -1].nombre) == -1) {
             // cout << "SWAP" << endl;
 
@@ -352,18 +350,18 @@ int recursion_swap(Mundial* mundial, int i){
     return 0;
 }
 
-int recursion_swap_pp(Fase* fase, int i, int fase_numerica){
-    if (i != 0){
-        if ( fase->equipos[i].puntos[fase_numerica] > fase->equipos[i - 1].puntos[fase_numerica]) {
-            // cout << "SWAP" << endl;
-
+int recursion_swap_pp(Mundial* mundial, int index_fase, int index_equipo, int fase_numerica){
+    if (index_equipo != 0){
+        if ( mundial->fases[index_fase].equipos[index_equipo].puntos[fase_numerica] > mundial->fases[index_fase].equipos[index_equipo - 1].puntos[fase_numerica]) {
+            //cout << "PREVIO/ i-1: " << fase->equipos[i - 1].puntos[fase_numerica] << " i: " << fase->equipos[i].puntos[fase_numerica] << endl;
             Equipo* swap_equipo_pp = new Equipo;                // equipo[i] apunta a direcc de equipos
-            *swap_equipo_pp = fase->equipos[i];
-            fase->equipos[i] = fase->equipos[i - 1];
-            fase->equipos[i - 1] = *swap_equipo_pp;
+            *swap_equipo_pp = mundial->fases[index_fase].equipos[index_equipo];
+            mundial->fases[index_fase].equipos[index_equipo] = mundial->fases[index_fase].equipos[index_equipo-1];
+            mundial->fases[index_fase].equipos[index_equipo-1] = *swap_equipo_pp;
+            // cout << "POST/ i-1: " << fase->equipos[i - 1].puntos[fase_numerica] << " i: " << fase->equipos[i].puntos[fase_numerica] << endl;
 
             delete swap_equipo_pp;
-            recursion_swap_pp(fase,i-1,fase_numerica);
+            recursion_swap_pp(mundial,index_fase,index_equipo - 1,fase_numerica);
         }
     }
 
@@ -381,8 +379,12 @@ void ordenar_equipos(Mundial* mundial){
 void ordenar_fases(Mundial* mundial){
     // ORDENAMOS POR NUMERO (por insercion)
     for (int i = 0; i < mundial->cant_fases; i++){
-        for (int ii = 0; ii < mundial->fases[i].cant_equipos; ii++)
-            recursion_swap_pp(&mundial->fases[i], ii, fase_a_numero(mundial->fases[i].fase));
+        for (int ii = 0; ii < mundial->fases[i].cant_equipos; ii++){
+            if (i < 5)
+                recursion_swap_pp(mundial,i, ii, i);
+            else
+                recursion_swap_pp(mundial,i, ii, 5);
+        }
     }
 }
 
@@ -562,7 +564,7 @@ int descargar_mundial(Mundial* mundial){
     */
     for (int i = 0; i < mundial->cant_equipos; i++){
         cout << "I: " << i << endl;
-        delete &mundial->equipos[i];
+        delete &(mundial->equipos[i]);
     }
 
     cout << "EQUIPOS BORRADOS" << endl;
@@ -772,13 +774,25 @@ void menu_buscar_equipo(string busqueda, Mundial* mundial){
 void menu_puntos(Mundial* mundial){
     cout << "FASE DE GRUPOS" << endl;
     for (int i = mundial->cant_fases -1; i >= 0; i--){
-        if (i > 4){
-            cout << "GRUPO " << mundial->fases[i].fase << endl;
-            cout << mundial->fases[i].cant_equipos << endl;
-            for (int ii = 0; ii < mundial->fases[i].cant_equipos; ii++){
-                cout << "Equipo: " << mundial->fases[i].equipos[ii].nombre << " Puntos: " << mundial->fases[i].equipos[ii].puntos[5] << endl;
+        if (i > 4)
+            cout << "GRUPO " << to_upper(mundial->fases[i].fase) << endl;
+        else if (i == 4)
+            cout << "OCTAVOS" << endl;
+        else if (i == 3)
+            cout << "CUARTOS" << endl;
+        else if (i == 2)
+            cout << "SEMIFINAL" << endl;
+        else if (i == 1)
+            cout << "TERCER PUESTO" << endl;
+        else if (i == 0)
+            cout << "FINAL" << endl;
+
+        for (int ii = 0; ii < mundial->fases[i].cant_equipos; ii++){
+                if (i > 4)
+                    cout << "Equipo: " << to_upper(mundial->fases[i].equipos[ii].nombre) << " Puntos: " << mundial->fases[i].equipos[ii].puntos[5] << endl;
+                else
+                    cout << "Equipo: " << to_upper(mundial->fases[i].equipos[ii].nombre) << " Puntos: " << mundial->fases[i].equipos[ii].puntos[i] << endl;
             }
-        }
     }
 }
 
