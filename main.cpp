@@ -29,8 +29,7 @@ int main(int argc, char* argv[]){
     }
 
     // Cargar equipos en memoria
-    string entrada = "equipos.txt";
-    ifstream entrada_equipos(entrada);
+    ifstream entrada_equipos("equipos.txt");
     if (!entrada_equipos){
         cerr << "ERROR APERTURA file1" << endl;
         descargar_mundial(mundial);
@@ -47,7 +46,7 @@ int main(int argc, char* argv[]){
             }
         }
         else{
-            cout << "Formato de equipo invalido" << endl;
+            cerr << "Formato de equipo invalido" << endl;
             entrada_equipos.close();
             descargar_mundial(mundial);
             return 1;
@@ -69,23 +68,19 @@ int main(int argc, char* argv[]){
     string fase;
     while (getline(entrada_partidos, linea)){
         linea = to_lower(linea);
-        if (validar_partido(linea)){
-            if (divisor_de_fase(linea))
-                fase = linea;
-            else{
-                if (cargar_partidos(linea, mundial, fase) == 1){
-                    entrada_partidos.close();
-                    descargar_mundial(mundial);
-                }
+        if (divisor_de_fase(linea) == false){
+            Partido* partido = validar_partido(mundial, linea);
+            if (partido != nullptr)
+                cargar_partidos(partido, mundial, fase);
+            else {
+                cerr << "Formato de partido invalido, linea: '" << linea << "'" << endl;
+                entrada_partidos.close();
+                descargar_mundial(mundial);
+                return 1;
             }
         }
-        else {
-            cout << "Formato de partido invalido" << endl;
-            cout << linea << endl;
-            entrada_partidos.close();
-            descargar_mundial(mundial);
-            return 1;
-        }
+        else
+            fase = linea;
     }
     entrada_partidos.close();
     formar_grupos(mundial);     // SE PODRIA ORDENAR GRUPOS ALFABETICAMENTE PARA QUE SE MUESTREN ALFABETICAMENTE, POR FALTA DE TIEMPO NO SE IMPLEMENTA

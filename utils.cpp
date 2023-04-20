@@ -7,6 +7,7 @@
 
 using namespace std;
 
+// MANEJO DE MEMORIA
 int iniciar_equipo_vacio(Equipo* equipo){
     equipo = new Equipo;
     if (equipo == nullptr){
@@ -114,7 +115,7 @@ int estirar_vector_grupo(Mundial* mundial, int num_fase){
 }
 
 int cargar_equipo_en_memoria(string linea, Mundial* mundial){
-// Carga de equipos (aleatoria, ordenado post cierre de file con inserción
+// Carga de equipos (aleatoria, ordenado post cierre de file con inserciï¿½n
     //cout << "CANT EQUIPOS: " << mundial->cant_equipos << endl;
     //cout << "CANT FASES: " << mundial->cant_fases << endl;
 
@@ -131,79 +132,14 @@ int cargar_equipo_en_memoria(string linea, Mundial* mundial){
     return 0;
 }
 
-int cargar_partidos(string linea, Mundial* mundial, string fase){
-// PROCESAMIENTO DEL TEXTO
-    // DEBUGGING cout << "NUEVA ITERACION" << endl;
-    // menu_listar_equipos(mundial);    DEBUGGING
-    Partido* partido = new Partido;
+int cargar_partidos(Partido* partido, Mundial* mundial, string fase){
 
-    int i = 0;
-    int cant_palabras = 1;
-    while (linea[i] != '\0'){
-        if (linea[i] == ',')
-            cant_palabras++;
-        i++;
-    }
-
-    string* lista = new string [cant_palabras];
-
-    i = 0;
-    int comas_contadas = 0;
-    int largo_acumulado = 0;
-    while (linea[i] != '\0'){
-        if (linea[i] == ','){
-            // cout << "COMA ENCONTRADA" << endl;
-            lista[comas_contadas] += "\0";
-            comas_contadas++;
-        }
-        else
-            lista[comas_contadas] += tolower(linea[i]);
-        i++;
-    }
-
-    //string* lista = separar_csv(linea);   DEBUG
-    // cout << "POR BUSCAR EQUIPOS " << lista[0] << "Y " << lista[2] << endl;
-    Equipo* encontrado1;
-    Equipo* encontrado2;
-    if (cmp_string(fase,"grupos")){
-        encontrado1 = buscar_equipo(mundial, lista[0]);
-        encontrado2 = buscar_equipo(mundial, lista[2]);
-    }
-    else {
-        encontrado1 = buscar_equipo(mundial, lista[0]);
-        encontrado2 = buscar_equipo(mundial, lista[3]);
-    }
-
-    // Descartar
-    if ((encontrado1 != nullptr) && (encontrado2 != nullptr)){
-        partido->equipo1 = encontrado1;
-        partido->equipo2 = encontrado2;
-
-        if (cmp_string(fase,"grupos")){
-            partido->goles1 = int(lista[1][0]);
-            partido->penales1 = -1;
-            partido->goles2 = int(lista[3][0]);
-            partido->penales2 = -1;
-        }
-        else {
-            partido->goles1 = int(lista[1][0]);
-            partido->penales1 = int(lista[2][0]);
-            partido->goles2 = int(lista[4][0]);
-            partido->penales2 = int(lista[5][0]);
-        }
-    }
-    else {
-        cerr << "ERROR: Equipo no encontrado" << endl;
-        return 1;
-    }
-
-// CARGAR PARTIDO
     int fase_numerica = fase_a_numero(fase);
 
     // ASIGNACION DE PUNTOS
     int goles = partido->goles1 - partido->goles2;
     int penales = partido->penales1 - partido->penales2;
-    int ganador = goles + penales;
+    // int ganador = goles + penales;
 
     // SUMA DE PUNTOS
     if (goles < 0)
@@ -229,16 +165,6 @@ int cargar_partidos(string linea, Mundial* mundial, string fase){
     partido->equipo1->fase_final = fase_numerica;
     partido->equipo2->fase_final = fase_numerica;
 
-    /* No es mas necesario (se mantiene por las dudas)
-    if (fase_numerica < 5){
-        mundial->fases[fase_numerica].equipos[mundial->fases[fase_numerica].cant_equipos] = *partido->equipo2;
-        mundial->fases[fase_numerica].cant_equipos += 1;
-        mundial->fases[fase_numerica].equipos[mundial->fases[fase_numerica].cant_equipos] = *partido->equipo1;
-        mundial->fases[fase_numerica].cant_equipos += 1;
-    }
-    */
-
-    delete [] lista;
     delete partido;
 
     return 0;
@@ -271,7 +197,7 @@ int formar_grupos(Mundial* mundial){
     int posicion;
     for (int i = 0; i < mundial->cant_equipos; i++){
 
-        // AÑADIR EQUIPO A GRUPO
+        // Aï¿½ADIR EQUIPO A GRUPO
         posicion = iterar_fases(mundial,mundial->equipos[i].grupo);
         // cout << "POSICION: " << posicion << endl;
         // Si la fase esta vacia, guardar nuevo grupo
@@ -286,7 +212,7 @@ int formar_grupos(Mundial* mundial){
                     return 1;
             }
 
-            // Se estira grupo solo una vez, podría estirarse mas
+            // Se estira grupo solo una vez, podrï¿½a estirarse mas
             if (estirar_vector_grupo(mundial, posicion) == 1)
                 return 1;
         }
@@ -317,21 +243,43 @@ int formar_grupos(Mundial* mundial){
     return 0;
 }
 
-int iterar_fases(Mundial* mundial, char grupo){
-    int i = 5;
-    bool grupo_encontrado = false;
-    while (grupo_encontrado == false && i < mundial->cant_fases){
-        if (mundial->fases[i].fase[0] == grupo){
-            grupo_encontrado = true;
-            // cout << "GRUPO EXISTENTE: " << grupo << endl;
-        }
-        else
-            i++;
-    }
+Mundial* iniciar_mundial(void){
+    Mundial* mundial = new Mundial;
 
-    return i;
+    mundial->cant_equipos = 0;
+    mundial->cant_fases = 0;
+    mundial->MAXIMO_ITERACIONES = 0;
+
+    mundial->equipos = nullptr;
+    mundial->fases = nullptr;
+
+    return mundial;
 }
 
+int descargar_mundial(Mundial* mundial){
+    // BORRAR vector dinamico DE EQUIPOS EN FASES y DE FASES
+    for (int i = 0; i < mundial->cant_fases; i++)
+        delete [] mundial->fases[i].equipos;
+    delete [] mundial->fases;
+
+    //cout << "FASES BORRADAS" << endl;
+
+    for (int i = mundial->cant_equipos - 1; i <= 0; i--){
+        cout << "I: " << i << endl;
+        delete &(mundial->equipos[i]);
+    }
+
+    // cout << "EQUIPOS BORRADOS" << endl;
+
+    delete [] mundial->equipos;                 // BORRAR VECTOR
+    delete mundial;                             // BORRAR MUNDIAL
+
+    // cout << "MUNDIAL ELIMINADO" << endl;
+    return 0;
+}
+
+
+// ORDENAMIENTO
 int recursion_swap(Mundial* mundial, int i){
     if (i != 0){
         if (comparar_alfabeticamente( mundial->equipos[i].nombre, mundial->equipos[i -1].nombre) == -1) {
@@ -388,32 +336,123 @@ void ordenar_fases(Mundial* mundial){
     }
 }
 
-int comparar_alfabeticamente(string a, string b){
-    int resultado = 0;
-    int i = 0;
 
-    int largo_a = len_string(a);
-    int largo_b = len_string(b);
 
-    int ac = int(a[i]);
-    int bc = int(b[i]);
+// FUNCIONES GENERALES
+bool validar_equipo(string linea){
+    // La validaciï¿½n realizada es de sintaxis.
+    // Si el nombre es alfabetico, y termina en ' X', serï¿½ vï¿½lido. Ej equipo valido: Paises_Bajos
+    // Nota: Esto no aplica para todos los deportes (por ej, en e-sports es usual que sean alfanumericos)
+    bool equipo_valido = true;
+    int largo = len_string(linea);
 
-    while (ac == bc && ((i < largo_a)&&(i < largo_b))){
-        i++;
-        ac = int(a[i]);
-        bc = int(b[i]);
+    if (is_alfa(linea[largo - 1]) && (int)linea[largo - 2] == 32){
+        int i = 0;
+        while (equipo_valido == true && i < largo - 2){
+            if (is_alfa(linea[i]) == false)
+                equipo_valido = false;
+            i += 1;
+        }
     }
-
-    if (ac > bc)
-        return 1;
-    else if (ac < bc)
-        return -1;
     else
-        return 0;
+        equipo_valido = false;
+
+    return equipo_valido;
 }
 
-bool divisor_de_fase(string input){
-    return ( cmp_string(input,"grupos") || cmp_string(input,"octavos") || cmp_string(input,"cuartos") || cmp_string(input,"semifinales") || cmp_string(input,"final") || cmp_string(input,"tercer puesto"));
+Partido* validar_partido(Mundial* mundial, string linea){
+    // LA VALIDACION REALIZADA ES UNICAMENTE DE SINTAXIS Y EXISTENCIA DE LOS EQUIPOS MENCIONADOS
+    // NO SE REALIZA VALIDACIï¿½N DE Lï¿½GICA INTERNA DE LO MENCIONADO (ej. si a la final llego un equipo que no jugo la semi)
+    // sintaxis valida equipo1,goles1,penales1,equipo2,goles2,penales2
+
+    bool partido_valido = true;
+    Equipo *equipo1 = nullptr;
+    Equipo *equipo2 = nullptr;
+    int goles[2];
+    int penales[2];
+    string equipo[2];
+
+    string argv[6];
+    int argc = 0;
+
+    // SEPARACION EN ARGUMENTOS
+    int largo = len_string(linea);
+    for (int i = 0; i < largo && partido_valido == true; i++){
+        if ((int)linea[i] != 44)
+            argv[argc] += linea[i];
+        else
+            argc += 1;
+
+        if (argc > 5){
+            partido_valido = false;
+            cout << "DEMASIADOS ARGUMENTOS" << endl;
+        }
+    }
+
+    // VALIDACIÃ“N
+    if (partido_valido) {
+        if (argc == 3){
+            equipo[0] = argv[0];
+            equipo[1] = argv[2];
+
+            goles[0] = string_a_int(argv[1]);
+            goles[1] = string_a_int(argv[3]);
+
+            penales[0] = -1;
+            penales[1] = -1;
+        }
+        else if (argc == 5){
+            equipo[0] = argv[0];
+            equipo[1] = argv[3];
+
+            goles[0] = string_a_int(argv[1]);
+            goles[1] = string_a_int(argv[4]);
+
+            penales[0] = string_a_int(argv[2]);
+            penales[1] = string_a_int(argv[5]);
+        }
+        else
+            partido_valido = false;
+
+        if (goles[0] == -3 || goles[1] == -3)
+            partido_valido = false;
+        else if ((argc == 5) && (penales[0] == -3 || penales[1] == -3))
+            partido_valido = false;
+        else {
+            equipo1 = buscar_equipo(mundial,equipo[0]);
+            equipo2 = buscar_equipo(mundial,equipo[1]);
+        }
+    }
+
+    // SI EXISTE PARTIDO, DEVOLVER PARTIDO CARGADO EN MEMORIA
+    if (equipo1 == nullptr || equipo2 == nullptr)
+        return nullptr;
+    else {
+        Partido* salida = new Partido;
+        salida->equipo1 = equipo1;
+        salida->equipo2 = equipo2;
+        salida->goles1 = goles[0];
+        salida->goles2 = goles[1];
+        salida->penales1 = penales[0];
+        salida->penales2 = penales[1];
+
+        return salida;
+    }
+}
+
+int iterar_fases(Mundial* mundial, char grupo){
+    int i = 5;
+    bool grupo_encontrado = false;
+    while (grupo_encontrado == false && i < mundial->cant_fases){
+        if (mundial->fases[i].fase[0] == grupo){
+            grupo_encontrado = true;
+            // cout << "GRUPO EXISTENTE: " << grupo << endl;
+        }
+        else
+            i++;
+    }
+
+    return i;
 }
 
 Equipo* buscar_equipo(Mundial* mundial, string nombre){
@@ -424,7 +463,6 @@ Equipo* buscar_equipo(Mundial* mundial, string nombre){
     else
         return &(mundial->equipos[resultado]);
 }
-
 
 int busqueda_binaria(Mundial* mundial, string nombre, int n, int cant_iteraciones){
     // cout << "NOMBRE" << nombre << endl;
@@ -458,6 +496,10 @@ int busqueda_binaria(Mundial* mundial, string nombre, int n, int cant_iteracione
         return n;
 }
 
+bool divisor_de_fase(string input){
+    return ( cmp_string(input,"grupos") || cmp_string(input,"octavos") || cmp_string(input,"cuartos") || cmp_string(input,"semifinales") || cmp_string(input,"final") || cmp_string(input,"tercer puesto"));
+}
+
 int fase_a_numero(string fase){
     int resultado;
     if (cmp_string(fase,"grupos"))
@@ -476,120 +518,19 @@ int fase_a_numero(string fase){
     return resultado;
 }
 
-/*
-void formar_grupos(Mundial* mundial){
-    if((mundial->cant_grupos)%10 == 0){                         // PRIMER ITERACION O SIN MAS MEMORIA (estirar 10 equipos mas)
-        estirar_vector_grupos(mundial);
-
-    int i = 0;
-    bool equipo_existente = false;
-    while (mundial->equipos[i].grupo != '\0'){              // Itera todos los equipos
-        for (int ii = 0; ii < mundial->cant_grupos; ii++){
-            if (mundial->equipos[i].grupo == mundial->grupos[ii][0]->grupo){
-
-            }
-        }
-
-        if (equipo_existente == false){
-            Equipo* nuevo_grupo = new Equipo[10];
-            nuevo_grupo[0] = mundial->equipos[i];
-            mundial->cant_grupos++;
-        }
-    }
-}
-
-int estirar_vector_grupos(Mundial* mundial){
-    int n = mundial->cant_grupos;
-    Equipo* nuevo = new Equipo [n + 10];  // Alocar Array de Equipos
-    if (nuevo == nullptr){
-        cout << "Error al agrandar vector" << endl;
-        return 1;
-    }
-
-    for (int i=0; i < n ; i++)              // ITEM [i] de NUEVO apunta a ITEM [i] de vector viejo
-        nuevo[i] = mundial->grupos[i];
-    for (int i=n; i < n + 10 ; i++)        // PONER VACIO en ESPACIOS NUEVOS
-        nuevo[i] = nullptr;
-
-
-    delete [] mundial->grupos;             // Borrar Array viejo (no se pierden elementos porque nuevo apunta a ellos)
-
-    mundial->grupos = nuevo;             // Equipos Mundial -> Nuevo vector
-
-    return 0;
-}
-*/
-Mundial* iniciar_mundial(void){
-    Mundial* mundial = new Mundial;
-
-    mundial->cant_equipos = 0;
-    mundial->cant_fases = 0;
-    mundial->MAXIMO_ITERACIONES;
-
-    mundial->equipos = nullptr;
-    mundial->fases = nullptr;
-
-    /*
-    // mundial->fases = new Fase[10];        // Total de fases
-    estirar_vector_fases(mundial);
-    mundial->fases[0].equipos = new Fase[2];      // Final
-    mundial->fases[1]. = new Fase[2];      // Tercer puesto
-    mundial->fases[2] = new Fase[4];      // Semifinal
-    mundial->fases[3] = new Fase[8];      // Cuartos
-    mundial->fases[4] = new Fase[16];     // Octavos
-
-    mundial->cant_fases = 5;
-    for (int i = 0; i < mundial->cant_fases; i++)
-        mundial->fases[i]->cant_equipos = 0;
-    */
-
-    return mundial;
-}
-
-int descargar_mundial(Mundial* mundial){
-    // BORRAR vector dinamico DE EQUIPOS EN FASES y DE FASES
-    for (int i = 0; i < mundial->cant_fases; i++)
-        delete [] mundial->fases[i].equipos;
-    delete [] mundial->fases;
-
-    cout << "FASES BORRADAS" << endl;
-    /* BORRAR EQUIPOS
-    int i = 0;
-    if (mundial->equipos != nullptr){
-        while (mundial->equipos[i].nombre[0] != '\0'){
-            delete &(mundial->equipos[i]);
-            i++;
-        }
-    }
-    */
-    for (int i = 0; i < mundial->cant_equipos; i++){
-        cout << "I: " << i << endl;
-        delete &(mundial->equipos[i]);
-    }
-
-    cout << "EQUIPOS BORRADOS" << endl;
-
-    delete [] mundial->equipos;                 // BORRAR VECTOR
-    delete mundial;                             // BORRAR MUNDIAL
-
-    cout << "MUNDIAL ELIMINADO" << endl;
-    return 0;
-}
-
-bool validar_equipo(string linea){
-    return true;
-}
-
-bool validar_partido(string linea){
-    return true;
-}
-
 int suma_puntos(Equipo* equipo){
     int suma = 0;
     for (int i = 0; i < 6; i++)
         suma += equipo->puntos[i];
 
     return suma;
+}
+
+int mod (float a){
+    if (a < 0)
+        a *= -1;
+
+    return a;
 }
 
 
@@ -662,13 +603,52 @@ string to_upper(string a){
         return a;
 }
 
-int mod (float a){
-    if (a < 0)
-        a *= -1;
+int comparar_alfabeticamente(string a, string b){
+    // int resultado = 0;
+    int i = 0;
 
-    return a;
+    int largo_a = len_string(a);
+    int largo_b = len_string(b);
+
+    int ac = int(a[i]);
+    int bc = int(b[i]);
+
+    while (ac == bc && ((i < largo_a)&&(i < largo_b))){
+        i++;
+        ac = int(a[i]);
+        bc = int(b[i]);
+    }
+
+    if (ac > bc)
+        return 1;
+    else if (ac < bc)
+        return -1;
+    else
+        return 0;
 }
 
+bool is_alfa(char a){
+    return (((int)a >= 97 && (int)a <= 122)||((int)a == 32)||((int)a == 95));
+}
+
+int string_a_int(string a){
+    int resultado = 0;
+    int largo = len_string(a);
+    if (cmp_string(a, "-1") == false){
+        for (int i=0; i < largo; i++){
+            if ((int)a[i] >= 48 && (int)a[i] <= 57)
+                resultado += ((int)a[i] % 48 )*pow(10,largo - 1 - i);
+            else {
+                resultado = -3;
+                i = largo;  // pseudo break
+            }
+        }
+    }
+    else
+        resultado = -1;
+
+    return resultado;
+}
 // FUNCIONES DE PROGRAMA PRINCIPAL
 bool menu(Mundial* mundial){
     bool mostrar_menu = true;
@@ -677,7 +657,7 @@ bool menu(Mundial* mundial){
     cout << "1. Listar equipos" << endl;
     cout << "2. Mostrar los equipos en primer segundo y tercer lugar" << endl;
     cout << "3. Buscar equipo por nombre" << endl;
-    cout << "4. Mostrar por fase los países ordenados por puntaje" << endl;
+    cout << "4. Mostrar por fase los paï¿½ses ordenados por puntaje" << endl;
     cout << "5. Salir" << endl;
 
     char input; cin >> input;
@@ -703,11 +683,11 @@ bool menu(Mundial* mundial){
         }
     case 5:
         {
-            cout << "¡Hasta la proxima!" << endl; mostrar_menu = false; break;
+            cout << "ï¿½Hasta la proxima!" << endl; mostrar_menu = false; break;
         }
     default:
         {
-            cout << "Opción invalida, favor reingresar" << endl; break;
+            cout << "Opciï¿½n invalida, favor reingresar" << endl; break;
         }
     }
     return mostrar_menu;
@@ -722,7 +702,6 @@ void menu_listar_equipos(Mundial* mundial){
         i++;
     }
 }
-
 
 void menu_podio(Mundial* mundial){
     cout << "1er:" << to_upper(mundial->fases[0].equipos[0].nombre) << " Total puntos:" << suma_puntos(&mundial->fases[0].equipos[0]) << endl;
